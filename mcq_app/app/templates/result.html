@@ -1,0 +1,540 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main>
+    <style>
+        /* Container styling */
+main {
+    padding: 40px 0;
+}
+
+/* MCQ box */
+.mcq {
+    background: #ffffff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid #e1e1e1;
+    transition: 0.2s ease;
+}
+
+.mcq:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Correct answer toggle */
+.correct-answer {
+    color: #28a745;
+    font-weight: bold;
+    opacity: 0; /* Hidden by default */
+    transition: 0.2s;
+}
+
+.show-answers .correct-answer {
+    opacity: 1 !important;
+}
+
+/* Buttons */
+.toggle-icon-btn,
+.copy-btn,
+.download-btn {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    margin-right: 10px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.toggle-icon-btn:hover,
+.copy-btn:hover,
+.download-btn:hover {
+    background: #0056b3;
+}
+
+/* Copy tooltip */
+.tooltip {
+    margin-left: 5px;
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+/* Dropdown */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 130px;
+}
+
+/* Test knowledge button */
+.know {
+    margin-top: 25px;
+}
+
+.know a {
+    text-decoration: none;
+    background: #28a745;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+}
+
+.know i {
+    margin-left: 8px;
+    color: #28a745;
+    font-size: 18px;
+}
+/* Modal BG */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+}
+
+/* Modal Box */
+.modal-content {
+    background: #fff;
+    width: 350px;
+    margin: 8% auto;
+    padding: 20px;
+    border-radius: 10px;
+    position: relative;
+    animation: drop 0.25s ease;
+}
+
+@keyframes drop {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Close Button */
+.close-btn {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    cursor: pointer;
+    font-size: 22px;
+}
+
+/* Tabs */
+.tab {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.tab button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    background: #eee;
+    font-weight: bold;
+}
+
+.tab .active {
+    background: #4285F4;
+    color: white;
+}
+
+/* Forms */
+.modal-content form input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.submit-btn, .submit-btn1 {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: #4285F4;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.submit-btn:hover, .submit-btn1:hover {
+    opacity: .9;
+}
+
+
+    </style>
+    <div class="container">
+
+        <h2>Generated Multiple Choice Questions (MCQs)</h2>
+        <br>
+        <button onclick="toggleIcon()" class="toggle-icon-btn">
+            <i id="eyeIcon" class="fas fa-eye-slash"></i>
+            <span class="tooltip">Show Answer</span>
+        </button>
+        <button class="copy-btn" onclick="copyQuestions()">Copy All</button>
+        <div class="dropdown">
+            <button class="download-btn" onclick="toggleDropdown()">Download <i class="fas fa-download"></i></button>
+            <div id="dropdownMenu" class="dropdown-menu">
+                <a href="#" class="dropdown-item" onclick="downloadFile('txt')"><i class="fas fa-file-alt"></i> TXT</a>
+                <a href="#" class="dropdown-item" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</a>
+                <a href="#" class="dropdown-item" onclick="downloadFile('word')"><i
+                        class="fas fa-file-word"></i>Word</a>
+            </div>
+
+        </div>
+        {% if user.is_authenticated %}
+        {% comment %} <form action="{% url 'logout' %}" method="POST">
+            {% csrf_token %} {% endcomment %}
+            {% comment %} <button type="submit" class="logout-btn">logout</button> {% endcomment %}
+        {% comment %} </form> {% endcomment %}
+        {% endif %}
+        {% if mcq_list %}
+        {% for mcq in mcq_list %}
+        <div class="mcq">
+            <p><strong>Question {{ forloop.counter }}:</strong> {{ mcq.question }}</p>
+            <ul>
+                {% for option in mcq.options %}
+                <li class="{% if option == mcq.correct_answer %}correct-answer{% endif %}">
+                    {{ option }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No MCQs generated. Please try again with different input.</p>
+        {% endif %}
+        <br>
+        <!-- <button type="submit" class="logout-btn">Test Your Knowledge.</button> -->
+       <div class="know">
+        <a href="{% url 'test' %}">Test Your Knowledge</a><i class="fa-solid fa-arrow-right-from-bracket"></i>
+       </div>
+
+        <!-- Modal -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <div class="tab">
+                    <button class="tablinks active" onclick="openTab(event, 'Login')">Login</button>
+                    <button class="tablinks" onclick="openTab(event, 'Register')">Register</button>
+                </div>
+
+                <!-- Login Form -->
+                <div id="Login" class="tabcontent" style="display: block;">
+                    <form id="Loginform" action="{% url 'login' %}" method="POST">
+                        {% csrf_token %}
+
+                        <label for="login-email">Email:</label>
+                        <input type="email" id="login-email" name="email" required>
+
+                        <label for="login-password">Password:</label>
+                        <input type="password" id="login-password" name="password" required>
+
+                        <button type="submit" class="submit-btn">Login</button>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div id="Register" class="tabcontent" style="display: none;">
+                    <form id="Registerform" action="{% url 'register' %}" method="POST">
+                        {% csrf_token %}
+
+                        <label for="register-email">Email:</label>
+                        <input type="email" id="register-email" name="email" required>
+
+                        <label for="register-password">Password:</label>
+                        <input type="password" id="register-password" name="password" required>
+
+                        <label for="register-confirm-password">Confirm Password:</label>
+                        <input type="password" id="register-confirm-password" name="confirm_password" required>
+
+                        <button type="submit" class="submit-btn1">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+
+<script>
+    function toggleIcon() {
+        let container = document.querySelector("main");
+        let icon = document.getElementById("eyeIcon");
+
+        container.classList.toggle("show-answers");
+
+        if (container.classList.contains("show-answers")) {
+            icon.classList.replace("fa-eye-slash", "fa-eye");
+        } else {
+            icon.classList.replace("fa-eye", "fa-eye-slash");
+        }
+    }
+
+    function toggleDropdown() {
+        let menu = document.getElementById("dropdownMenu");
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    function copyQuestions() {
+        let text = document.body.innerText;
+        navigator.clipboard.writeText(text);
+        alert("Copied!");
+    }
+</script>
+
+
+<script>
+
+    const modal = document.getElementById("loginModal");
+    // const loginBtn = document.getElementById("loginBtn");
+    const closeBtn = document.querySelector(".close-btn");
+
+    // loginBtn.onclick = () => {
+    //     modal.style.display = "flex";
+    // };
+
+    closeBtn.onclick = () => {
+        modal.style.display = "none";
+    };
+
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    };
+
+    // Tab functionality
+    function openTab(evt, tabName) {
+        const tabcontent = document.getElementsByClassName("tabcontent");
+        const tablinks = document.getElementsByClassName("tablinks");
+
+        for (let i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+        for (let i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+
+
+    function copyQuestions() {
+        let textToCopy = "";
+
+        document.querySelectorAll(".mcq").forEach((mcqElement) => {
+            // Capture the question text
+            const questionText = mcqElement.querySelector("p").textContent.trim();
+            textToCopy += questionText + "\n";
+
+            // Capture each option
+            const options = Array.from(mcqElement.querySelectorAll("li")).map(li => "- " + li.textContent).join("\n");
+            //  Array.from(_) converts this NodeList returned by querySelectorAll into an actual array. This allows us to use array methods like .map().
+            textToCopy += options + "\n\n";
+        });
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("All questions copied to clipboard!");
+        }).catch(err => {
+            alert("Failed to copy text: ", err);
+        });
+    }
+
+
+
+    async function downloadPDF() {
+        const response = await fetch("{% url 'is_logged_in' %}",
+            {
+                credentials: 'same-origin'
+            }
+        );
+        console.log(response)
+        const data = await response.json();
+        console.log(data)
+        if (!data.logged_in) {
+            console.log("not logged")
+            // If the user is not logged in, show the login modal
+            modal.style.display = "flex"; // Show the modal
+        }
+        else {
+            console.log("is already logged")
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let yOffset = 10;
+
+
+            document.querySelectorAll(".mcq").forEach((mcqElement, index) => {
+                const questionText = mcqElement.querySelector("p").textContent.trim();
+                doc.text(questionText, 10, yOffset);
+                yOffset += 10;
+
+                const options = Array.from(mcqElement.querySelectorAll("li")).map(li => li.textContent);
+                options.forEach(option => {
+                    doc.text("-" + option, 20, yOffset);
+                    yOffset += 10;
+                });
+
+                yOffset += 10; // Add space between questions
+
+                // Check for page overflow
+                if (yOffset > 270) {
+                    doc.addPage();
+                    yOffset = 10;
+                }
+            });
+
+            // Save the PDF
+            doc.save("Generated_MCQs.pdf");
+        }
+    }
+
+
+    // AJAX for Login Form
+    document.querySelector("#Loginform").onsubmit = async function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+        console.log("csrf token", csrfToken)
+        // const csrfToken = "{% csrf_token %}";
+        const response = await fetch("{% url 'login' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            },
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message); // Display success message
+            modal.style.display = "none"; // Close the modal
+            location.reload(); // Reload page to reflect logged-in state
+        } else {
+            alert(data.message); // Display error message
+        }
+    };
+
+    // AJAX for Registration Form
+    document.querySelector("#Registerform").onsubmit = async function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+        const response = await fetch("{% url 'register' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            },
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message); // Display success message
+            modal.style.display = "none"; // Close the modal
+            location.reload(); // Reload page to reflect logged-in state
+        } else {
+            alert(data.message); // Display error message
+        }
+    };
+
+    function toggleDropdown() {
+        const dropdownMenu = document.getElementById("dropdownMenu");
+        dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+    }
+
+    function downloadFile(type) {
+        // Implement download logic based on `type`
+        console.log(`Download ${type.toUpperCase()} file`);
+    }
+
+    function copyText() {
+        // Implement copy text logic
+        console.log("Copy text to clipboard");
+    }
+
+    // Close the dropdown if the user clicks outside of it
+    window.onclick = function (event) {
+        if (!event.target.closest('.download-btn')) {
+            const dropdownMenu = document.getElementById("dropdownMenu");
+            if (dropdownMenu.style.display === "block") {
+                dropdownMenu.style.display = "none";
+            }
+        }
+    }
+
+
+    function toggleIcon() {
+        const eyeIcon = document.getElementById('eyeIcon');
+        const correctAnswers = document.querySelectorAll('.correct-answer');
+
+        // Toggle eye icon and highlight correct answers
+        if (eyeIcon.classList.contains('fa-eye-slash')) {
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+
+            // Highlight correct answers
+            correctAnswers.forEach(answer => {
+                answer.style.fontWeight = 'bold';
+                answer.style.color = 'green';
+                answer.style.borderColor='green';
+            });
+        } else {
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+
+            // Remove highlight from correct answers
+            correctAnswers.forEach(answer => {
+                answer.style.fontWeight = 'normal';
+                answer.style.color = 'inherit';
+                answer.style.borderColor='';
+            });
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent any default behavior
+
+                // Toggle the .dark-mode class on <html> for global effect
+                document.documentElement.classList.toggle('darkmode');
+
+                // Save the user's preference in localStorage
+                localStorage.setItem('theme',
+                    document.documentElement.classList.contains('darkmode') ? 'dark' : 'light'
+                );
+            });
+        } else {
+            console.error("Element with ID 'dark-mode-toggle' not found.");
+        }
+
+        // Apply saved theme preference
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('darkmode');
+        }
+    });
+
+    
+  
+</script>
+<script src="{% static 'js/index.js' %}"></script>
+</body>
+
+</html>
+{% endblock %}

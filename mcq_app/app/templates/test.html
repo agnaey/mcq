@@ -1,0 +1,244 @@
+{% extends 'quesGens/base.html' %}
+{% block content %}
+<main>
+    <div style="border:none" class="container">
+        <h2>Test Your Knowledge</h2>
+        <br>
+        <form method="POST">
+            {% csrf_token %}
+            {% for mc in mc_list %}
+            <div class="mcq">
+                {{ mcq }}
+                <p> <strong>Question {{ forloop.counter }}:</strong> {{ mc.question }}</p>
+
+                <ul>
+                    {% for option in mc.options %}
+                    <li>
+                        <input type="radio" name="option_{{ forloop.parentloop.counter0 }}" value="{{ option }}">
+
+                        {{ option }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+
+            <button type="submit" id="sub" class="submit-btn">Submit</button>
+        </form>
+    </div>
+</main>
+<script>
+
+    const modal = document.getElementById("loginModal");
+    // const loginBtn = document.getElementById("loginBtn");
+    const closeBtn = document.querySelector(".close-btn");
+
+    // loginBtn.onclick = () => {
+    //     modal.style.display = "flex";
+    // };
+
+    closeBtn.onclick = () => {
+        modal.style.display = "none";
+    };
+
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    };
+
+    // Tab functionality
+    function openTab(evt, tabName) {
+        const tabcontent = document.getElementsByClassName("tabcontent");
+        const tablinks = document.getElementsByClassName("tablinks");
+
+        for (let i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+        for (let i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+
+
+    function copyQuestions() {
+        let textToCopy = "";
+
+        document.querySelectorAll(".mcq").forEach((mcqElement) => {
+            // Capture the question text
+            const questionText = mcqElement.querySelector("p").textContent.trim();
+            textToCopy += questionText + "\n";
+
+            // Capture each option
+            const options = Array.from(mcqElement.querySelectorAll("li")).map(li => "- " + li.textContent).join("\n");
+            //  Array.from(_) converts this NodeList returned by querySelectorAll into an actual array. This allows us to use array methods like .map().
+            textToCopy += options + "\n\n";
+        });
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("All questions copied to clipboard!");
+        }).catch(err => {
+            alert("Failed to copy text: ", err);
+        });
+    }
+
+
+
+    async function downloadPDF() {
+        const response = await fetch("{% url 'is_logged_in' %}",
+            {
+                credentials: 'same-origin'
+            }
+        );
+        console.log(response)
+        const data = await response.json();
+        console.log(data)
+        if (!data.logged_in) {
+            console.log("not logged")
+            // If the user is not logged in, show the login modal
+            modal.style.display = "flex"; // Show the modal
+        }
+        else {
+            console.log("is already logged")
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let yOffset = 10;
+
+
+            document.querySelectorAll(".mcq").forEach((mcqElement, index) => {
+                const questionText = mcqElement.querySelector("p").textContent.trim();
+                doc.text(questionText, 10, yOffset);
+                yOffset += 10;
+
+                const options = Array.from(mcqElement.querySelectorAll("li")).map(li => li.textContent);
+                options.forEach(option => {
+                    doc.text("-" + option, 20, yOffset);
+                    yOffset += 10;
+                });
+
+                yOffset += 10; // Add space between questions
+
+                // Check for page overflow
+                if (yOffset > 270) {
+                    doc.addPage();
+                    yOffset = 10;
+                }
+            });
+
+            // Save the PDF
+            doc.save("Generated_MCQs.pdf");
+        }
+    }
+
+
+    // AJAX for Login Form
+    document.querySelector("#Loginform").onsubmit = async function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+        console.log("csrf token", csrfToken)
+        // const csrfToken = "{% csrf_token %}";
+        const response = await fetch("{% url 'login' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            },
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message); // Display success message
+            modal.style.display = "none"; // Close the modal
+            location.reload(); // Reload page to reflect logged-in state
+        } else {
+            alert(data.message); // Display error message
+        }
+    };
+
+    // AJAX for Registration Form
+    document.querySelector("#Registerform").onsubmit = async function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+        const response = await fetch("{% url 'register' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            },
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message); // Display success message
+            modal.style.display = "none"; // Close the modal
+            location.reload(); // Reload page to reflect logged-in state
+        } else {
+            alert(data.message); // Display error message
+        }
+    };
+
+    function toggleDropdown() {
+        const dropdownMenu = document.getElementById("dropdownMenu");
+        dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+    }
+
+    function downloadFile(type) {
+        // Implement download logic based on `type`
+        console.log(`Download ${type.toUpperCase()} file`);
+    }
+
+    function copyText() {
+        // Implement copy text logic
+        console.log("Copy text to clipboard");
+    }
+
+    // Close the dropdown if the user clicks outside of it
+    window.onclick = function (event) {
+        if (!event.target.closest('.download-btn')) {
+            const dropdownMenu = document.getElementById("dropdownMenu");
+            if (dropdownMenu.style.display === "block") {
+                dropdownMenu.style.display = "none";
+            }
+        }
+    }
+
+
+    function toggleIcon() {
+        const eyeIcon = document.getElementById('eyeIcon');
+        const correctAnswers = document.querySelectorAll('.correct-answer');
+
+        // Toggle eye icon and highlight correct answers
+        if (eyeIcon.classList.contains('fa-eye-slash')) {
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+
+            // Highlight correct answers
+            correctAnswers.forEach(answer => {
+                answer.style.fontWeight = 'bold';
+                answer.style.color = 'green';
+                answer.style.borderColor='green';
+            });
+        } else {
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+
+            // Remove highlight from correct answers
+            correctAnswers.forEach(answer => {
+                answer.style.fontWeight = 'normal';
+                answer.style.color = 'inherit';
+                answer.style.borderColor='';
+            });
+        }
+    }
+
+</script>
+<script src="js/index.js" defer></script>
+{% endblock %}

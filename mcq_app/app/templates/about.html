@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main>
+    <div class="container">
+        <div class="profile">
+            <div class="images">
+                <img src="{%static 'img/aboutus.jpg' %}" alt="">
+            </div>
+            <div class="info">
+                <h2>About us</h2>
+                <p>We are a team of passionate engineering students dedicated to leveraging machine learning to simplify
+                    content creation. As part of our innovative journey, we have developed an MCQ Generator that
+                    automates the process of generating multiple-choice questions from textual content.
+
+                    Our project utilizes advanced natural language processing (NLP) and machine learning algorithms to
+                    ensure accuracy, relevance, and efficiency. By hosting our solution on a server, we provide seamless
+                    access to educators, students, and content creators, making learning more interactive and
+                    accessible.
+
+                    Driven by curiosity and a commitment to technological advancement, we continue to refine our project
+                    to enhance user experience and improve the quality of automated question generation.</p>
+            </div>
+        </div>
+        <br>
+        <hr>
+        <br>
+        <div class="add">
+            <h3>Phone</h3>
+            <p>+1 234 567 890</p>
+            <h3>Email</h3>
+            <p>engineergroup@company.com</p>
+            <h3>Address</h3>
+            <p>1234 Main St, Suite 100, Cityville, State, 12345</p>
+        </div>
+        <div class="contacts">
+            <p>follow us</p>
+
+            <ul class="social-icons">
+                <li><a href="#"><i class="fab fa-facebook" style="color:#1877f2;"></i></a></li>
+                <li><a href="#"><i class="fab fa-google" style="color:#db4437;"></i></a></li>
+                <li><a href="#"><i class="fab fa-youtube" style="color:#ff0000;"></i></a></li>
+                <li><a href="#"><i class="fab fa-instagram" style="color:#e1306c;"></i></a></li>
+            </ul>
+
+
+        </div>
+    </div>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent any default behavior
+
+                // Toggle the .dark-mode class on <html> for global effect
+                document.documentElement.classList.toggle('darkmode');
+
+                // Save the user's preference in localStorage
+                localStorage.setItem('theme',
+                    document.documentElement.classList.contains('darkmode') ? 'dark' : 'light'
+                );
+            });
+        } else {
+            console.error("Element with ID 'dark-mode-toggle' not found.");
+        }
+
+        // Apply saved theme preference
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('darkmode');
+        }
+    });
+
+</script>
+
+</body>
+
+</html>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'quesGens/base.html' %}
+{% block content %}
+<main>
+  <div class="container">
+    <h2>Test Results</h2>
+    <div class="card">
+     <p>Your score: {{ score }} out of {{ total }}</p>
+     {% if score > total|divisibleby:2 %}
+       <h2>Excellent  <i class="fa-solid fa-thumbs-up"></i></h2>
+     {% else %}
+      <h2>Poor  <i class="fa-solid fa-thumbs-down"></i></h2>
+     {% endif %}
+    <a href="{% url 'test' %}">Try Again <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+
+  </div>
+</main>
+{% endblock %}

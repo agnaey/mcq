@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main>
+    <div class="container">
+  
+  <header class="quiz-header">
+    <h1>Quiz Collections</h1>
+  </header>
+
+  <section class="quiz-container">
+    <div class="quiz-card" id="quiz-collection-1">
+      <h3 class="quiz-card-title">General Knowledge</h3>
+      <div class="quiz-list">
+        <p>Click to view the quizzes!</p>
+      </div>
+    </div>
+
+    <div class="quiz-card" id="quiz-collection-2">
+      <h3 class="quiz-card-title">Science</h3>
+      <div class="quiz-list">
+        <p>Click to view the quizzes!</p>
+      </div>
+    </div>
+
+    <div class="quiz-card" id="quiz-collection-3">
+      <h3 class="quiz-card-title">History</h3>
+      <div class="quiz-list">
+        <p>Click to view the quizzes!</p>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+<script>
+    // JavaScript to handle the display of quizzes when clicking a quiz collection card
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const quizCards = document.querySelectorAll('.quiz-card');
+  
+    quizCards.forEach(card => {
+      card.addEventListener('click', () => {
+        // Hide all other quiz cards
+        quizCards.forEach(otherCard => {
+          if (otherCard !== card) {
+            otherCard.style.display = 'none'; // Hide other cards
+          }
+        });
+  
+        const quizList = card.querySelector('.quiz-list');
+        
+        // If the clicked card's quiz list is currently hidden, show it and expand the card
+        if (quizList.style.display === 'none' || quizList.style.display === '') {
+          quizList.style.display = 'block';
+          
+          if (card.id === "quiz-collection-1") {
+            // General Knowledge Quiz Questions
+            quizList.innerHTML = `
+              <ul>
+                <li>Question 1: What is the capital of France? <br> <strong>Answer:</strong> Paris</li>
+                <br>
+                <li>Question 2: What is the largest ocean on Earth? <br> <strong>Answer:</strong> Pacific Ocean</li>
+                <br>
+                <li>Question 3: Who wrote "1984"? <br> <strong>Answer:</strong> George Orwell</li>
+                <br>
+                <li>Question 4: What is the tallest mountain in the world? <br> <strong>Answer:</strong> Mount Everest</li>
+                <br>
+                <li>Question 5: What year did World War II end? <br> <strong>Answer:</strong> 1945</li>
+                <br>
+                <li>Question 6: What is the smallest country in the world? <br> <strong>Answer:</strong> Vatican City</li>
+                
+              </ul>
+            `;
+          } else if (card.id === "quiz-collection-2") {
+            // Science Quiz Questions
+            quizList.innerHTML = `
+              <ul>
+                <li>Question 1: What is the chemical symbol for gold? <br> <strong>Answer:</strong> Au</li>
+                <br>
+                <li>Question 2: What planet is known as the Red Planet? <br> <strong>Answer:</strong> Mars</li>
+                <br>
+                <li>Question 3: What is the process by which plants make their own food? <br> <strong>Answer:</strong> Photosynthesis</li>
+                <br>
+                <li>Question 4: What is the smallest unit of life? <br> <strong>Answer:</strong> Cell</li>
+                <br>
+                 <li>Question 5: How many bones are in the adult human body? <br> <strong>Answer:</strong> 206</li>
+            </ul>
+          `;
+ 
+          } else if (card.id === "quiz-collection-3") {
+            // History Quiz Questions
+            quizList.innerHTML = `
+              <ul>
+                <li>Question 1: Who was the first president of the United States? <br> <strong>Answer:</strong> George Washington</li>
+                <br>
+                <li>Question 2: In what year did the Titanic sink? <br> <strong>Answer:</strong> 1912</li>
+                <br>
+                <li>Question 3: Who discovered America? <br> <strong>Answer:</strong> Christopher Columbus</li>
+                <br>
+                <li>Question 4: What was the name of the ship that brought the Pilgrims to America in 1620? <br> <strong>Answer:</strong> Mayflower</li>
+                <br>
+                <li>Question 5: Who was the first emperor of China? <br> <strong>Answer:</strong> Qin Shi Huang</li>
+                <br> 
+                <li>Question 6: What year did the Berlin Wall fall? <br> <strong>Answer:</strong> 1989</li>
+             </ul>
+            `;
+          }
+  
+          // Expand the card to a larger width and height
+          card.style.width = '400px';
+          card.style.height = '500px';
+        } else {
+          // If it's already visible, hide it and restore card size
+          quizList.style.display = 'none';
+          card.style.width = '250px';
+          card.style.height = 'auto';
+          setTimeout(() => {
+            // Show other cards after hiding the current one
+            quizCards.forEach(otherCard => {
+              otherCard.style.display = 'block';
+            });
+          }, 300); // Wait for the transition to finish before showing other cards
+        }
+      });
+    });
+  });
+  
+  function setActive(element) {
+    // Remove 'active' class from all <li> elements
+    document.querySelectorAll("#sidebar li").forEach((li) => {
+        li.classList.remove("active");
+    });
+
+    // Add 'active' class to the clicked <li> element
+    element.parentElement.classList.add("active");
+} 
+document.addEventListener("DOMContentLoaded", function () {
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+  if (darkModeToggle) {
+      darkModeToggle.addEventListener('click', function(event) {
+          event.preventDefault(); // Prevent any default behavior
+
+          // Toggle the .dark-mode class on <html> for global effect
+          document.documentElement.classList.toggle('darkmode');
+
+          // Save the user's preference in localStorage
+          localStorage.setItem('theme', 
+              document.documentElement.classList.contains('darkmode') ? 'dark' : 'light'
+          );
+      });
+  } else {
+      console.error("Element with ID 'dark-mode-toggle' not found.");
+  }
+
+  // Apply saved theme preference
+  if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('darkmode');
+  }
+});
+
+  
+</script>
+{% endblock %}
