@@ -21,30 +21,170 @@ from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
 from .models import User
 
+from django.conf import settings
 
 
 
-# def login_page(request):
+import json
+from django.shortcuts import render
+from PyPDF2 import PdfReader
+from groq import Groq
+from django.conf import settings
+import os
+
+
+# Load Groq client
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
+import re
+
+from django.shortcuts import render
+
+
+from django.shortcuts import render
+from django.conf import settings
+from groq import Groq
+import re
+
+# def generate_mcq(request):
+#     mcq_list = []
 #     if request.method == "POST":
-#         email = request.POST.get("email")
-#         password = request.POST.get("password")
+#         text = request.POST.get("context", "")
+#         client = Groq(api_key=settings.GROQ_API_KEY)
 
 #         try:
-#             user = User.objects.get(email=email)
-#         except User.DoesNotExist:
-#             messages.error(request, "Invalid email or password")
-#             return render(request, "login1.html")
+#             chat_completion = client.chat.completions.create(
+#                 model = "llama-3.3-70b-versatile"
+# ,  # active model
+#                 messages=[
+#                     {"role": "system", "content": "You are an MCQ generator."},
+#                     {"role": "user", "content": f"Generate 3 MCQs from this text: {text}\nInclude the correct answer in a line starting with 'Answer:' after options."}
+#                 ]
+#             )
 
-#         # Manual password check (since you're storing plain text)
-#         if user.password == password:
-#             request.session['user_id'] = user.id
-#             request.session['user_email'] = user.email
-#             return redirect("generate_mcq")
-#         else:
-#             messages.error(request, "Invalid email or password")
-#             return render(request, "login1.html")
+#             raw = chat_completion.choices[0].message.content
+#             # print(raw)  # for debugging
 
-#     return render(request, "login1.html")
+#             # Flexible parser
+#             questions = re.split(r"Question \d+:|Q\d+:", raw)
+#             for q in questions:
+#                 q = q.strip()
+#                 if not q:
+#                     continue
+#                 lines = q.split("\n")
+#                 question_text = lines[0].strip()
+#                 options = []
+#                 answer = ""
+#                 for line in lines[1:]:
+#                     line = line.strip()
+#                     if line.lower().startswith("answer:"):
+#                         answer = line.split(":", 1)[1].strip()
+#                     elif line:
+#                         options.append(line)
+#                 if question_text:
+#                     mcq_list.append({
+#                         "question": question_text,
+#                         "options": options,
+#                         "correct_answer": answer if answer else (options[-1] if options else "")
+#                     })
+
+#         except Exception as e:
+#             mcq_list = [{"question": f"Error: {str(e)}", "options": [], "correct_answer": ""}]
+
+#     return render(request, "result.html", {"mcq_list": mcq_list})
+
+
+client = Groq(api_key=settings.GROQ_API_KEY)  # global client for helper
+
+def generate_mcq(request):
+    mcq_list = []
+    if request.method == "POST":
+        text = request.POST.get("context", "").strip()
+
+        try:
+            # Step 1: Force AI to output JSON
+            prompt = (
+                f"Generate 3 MCQs from this text:\n{text}\n\n"
+                f"Return output ONLY in this JSON format:\n"
+                f"[{{\"question\": \"\", \"options\": [], \"answer\": \"\"}}]\n"
+                f"Options must include at least 3 choices (A, B, C). Correct answer must match one of the options."
+            )
+
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            raw = response.choices[0].message.content.strip()
+
+            # Step 2: Parse JSON safely
+            try:
+                mcq_list = json.loads(raw)
+            except json.JSONDecodeError:
+                # fallback: replace single quotes with double quotes
+                raw_fixed = raw.replace("'", '"')
+                mcq_list = json.loads(raw_fixed)
+
+            # Step 3: ensure keys are standardized
+# standardize correct answer
+            for mcq in mcq_list:
+                options_raw = mcq.get('options', [])
+                # If AI returned a single string with newlines, split it
+                if isinstance(options_raw, str):
+                    options = [opt.strip() for opt in options_raw.splitlines() if opt.strip()]
+                else:
+                    options = [opt.strip() for opt in options_raw if opt.strip()]
+
+                answer = mcq.get('answer', '').strip()
+
+                # Ensure correct answer is included
+                if answer and answer not in options:
+                    options.append(answer)
+
+                mcq['options'] = options
+                mcq['correct_answer'] = answer if answer else (options[-1] if options else "")
+
+
+
+        except Exception as e:
+            mcq_list = [{"question": f"Error: {str(e)}", "options": [], "correct_answer": ""}]
+
+    return render(request, "result.html", {"mcq_list": mcq_list})
+
+
+
+
+def generate_ai_mcqs(text, n=5):
+    prompt = (
+        f"Generate {n} high-quality MCQs from the following content.\n"
+        f"Return JSON ONLY in this exact format:\n"
+        f"[{{\"question\": \"\", \"options\": [], \"answer\": \"\"}}]\n\n"
+        f"CONTENT:\n{text}\n"
+    )
+
+    response = client.chat.completions.create(
+        model="mixtral-8x7b-32768",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    content = response.choices[0].message.content.strip()
+
+    try:
+        mcqs = json.loads(content)
+    except:
+        content = content.replace("'", '"')
+        mcqs = json.loads(content)
+
+    return mcqs
+
+
+
+
+
+
 
 def login_page(request):
     if request.method == "POST":
@@ -97,63 +237,33 @@ def logout(request):
 
 
 
-def generate_mcq(request):
-    if request.method == "POST":
-        form = InputForm(request.POST, request.FILES)
-        if form.is_valid():
-            context = clean_text(form.cleaned_data["context"]).strip()
-            pdfile = form.cleaned_data["pdf_file"]
-            num_keywords = int(form.cleaned_data["num_keywords"])
-            option_1 = form.cleaned_data["option_1"]
-            option_2 = form.cleaned_data["option_2"]
-            option_3 = form.cleaned_data["option_3"]
 
-            if not context and pdfile:
-                reader = PyPDF2.PdfReader(pdfile, strict=False)
-                context = "".join(page.extract_text() or "" for page in reader.pages)
+# def generate_basic_mcqs(text):
+#     import random
+#     sentences = [s.strip() for s in text.split(".") if s.strip()][:5]
 
-            # Step 1: Token check
-            if len(context) > 2500:
-                from apps.questionGeneration import question_tokenizer
-                tokenized_length = len(question_tokenizer.tokenize(context))
-            else:
-                tokenized_length = 0
+#     mcqs = []
+#     for s in sentences:
+#         q = f"What does the text say about: '{s[:20]}...'?"
+#         correct = s
+#         distractors = [
+#             "An unrelated idea.",
+#             "A partially incorrect detail.",
+#             "An opposite meaning."
+#         ]
 
-            # Step 2: Chunking
-            chunks = (
-                keyword_centric_chunking(context, question_tokenizer)
-                if tokenized_length > 500
-                else [context]
-            )
+#         options = [correct] + distractors
+#         random.shuffle(options)
 
-            # Step 3: Generate MCQs
-            all_keywords, questions_dict, distractors_dict = [], {}, {}
-            for chunk in chunks:
-                keywords = extract_keywords_based_on_option(option_2, chunk, num_keywords)
-                keywords = remove_duplicates(keywords)
-                all_keywords.extend(keywords)
+#         mcqs.append({
+#             "question": q,
+#             "options": options,
+#             "answer": correct,
+#         })
 
-                q_dict, d_dict = generate_questions_and_distractors(option_1, option_3, chunk, keywords)
-                questions_dict.update(q_dict)
-                distractors_dict.update(d_dict)
+#     return mcqs
 
-            for keyword in all_keywords:
-                distractors_dict[keyword] = remove_distractors_duplicate_with_correct_answer(
-                    keyword, distractors_dict[keyword]
-                )
 
-            mcq_list = create_mcq_list(all_keywords, questions_dict, distractors_dict)
-
-            if request.user.is_authenticated:
-                MCQ.objects.create(user=request.user, mcqs=mcq_list)
-            else:
-                request.session['mcqs'] = json.dumps(mcq_list)
-
-                
-
-            return render(request, "result.html", {"context": context, "mcq_list": mcq_list})
-
-    return render(request, "index.html", {"form": InputForm(), "user": request.user})
 
 
 def result(request):

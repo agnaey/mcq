@@ -192,27 +192,37 @@ main {
             </div>
 
         </div>
-        {% if user.is_authenticated %}
-        {% comment %} <form action="{% url 'logout' %}" method="POST">
-            {% csrf_token %} {% endcomment %}
-            {% comment %} <button type="submit" class="logout-btn">logout</button> {% endcomment %}
-        {% comment %} </form> {% endcomment %}
-        {% endif %}
-        {% if mcq_list %}
+<div class="container">
+    <h2>Generated Multiple Choice Questions (MCQs)</h2>
+    <br>
+
+    {% if mcq_list %}
         {% for mcq in mcq_list %}
-        <div class="mcq">
-            <p><strong>Question {{ forloop.counter }}:</strong> {{ mcq.question }}</p>
-            <ul>
-                {% for option in mcq.options %}
-                <li class="{% if option == mcq.correct_answer %}correct-answer{% endif %}">
-                    {{ option }}</li>
-                {% endfor %}
-            </ul>
-        </div>
+            <div class="mcq" style="border:1px solid #ddd; padding:10px; margin-bottom:15px; border-radius:5px;">
+                <p><strong>Question {{ forloop.counter }}:</strong> {{ mcq.question }}</p>
+                <ul>
+                    {% for option in mcq.options %}
+      <li>{{ option }}</li>
+    {% endfor %}
+            </div>
         {% endfor %}
-        {% else %}
+    {% else %}
         <p>No MCQs generated. Please try again with different input.</p>
-        {% endif %}
+    {% endif %}
+</div>
+
+<style>
+.correct-answer {
+    font-weight: bold;
+    color: green;
+}
+ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+</style>
+
+
         <br>
         <!-- <button type="submit" class="logout-btn">Test Your Knowledge.</button> -->
        <div class="know">
@@ -512,10 +522,8 @@ main {
             darkModeToggle.addEventListener('click', function (event) {
                 event.preventDefault(); // Prevent any default behavior
 
-                // Toggle the .dark-mode class on <html> for global effect
                 document.documentElement.classList.toggle('darkmode');
 
-                // Save the user's preference in localStorage
                 localStorage.setItem('theme',
                     document.documentElement.classList.contains('darkmode') ? 'dark' : 'light'
                 );
@@ -524,7 +532,6 @@ main {
             console.error("Element with ID 'dark-mode-toggle' not found.");
         }
 
-        // Apply saved theme preference
         if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('darkmode');
         }

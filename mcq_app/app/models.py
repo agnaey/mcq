@@ -32,20 +32,23 @@ class Profile(models.Model):
             img.thumbnail(output_size)
             img.save(self.image.path)
 class MCQ(models.Model):
-    # In the MCQ model
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
-    mcqs = models.TextField()  # Store JSON data as a string
+    mcqs = models.TextField()  # Always store JSON string
 
     def save(self, *args, **kwargs):
-        # Convert the list of MCQs to a JSON string before saving
-        self.mcqs = json.dumps(self.mcqs)
+        # Only encode if mcqs is NOT already a string
+        if isinstance(self.mcqs, (list, dict)):
+            self.mcqs = json.dumps(self.mcqs)
+
         super().save(*args, **kwargs)
 
     def get_mcqs(self):
-        # Convert the JSON string back to a Python list
-        return json.loads(self.mcqs)
+        try:
+            return json.loads(self.mcqs)
+        except:
+            # If it's already a Python list
+            return self.mcqs
 
     def __str__(self):
         return f"MCQ Batch created at {self.created_at}"

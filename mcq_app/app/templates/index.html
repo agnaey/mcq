@@ -72,7 +72,7 @@
 
     <h4 class="text-muted mb-4">Enter text or upload a PDF to generate MCQs</h4>
 
-    <form method="post" enctype="multipart/form-data" class="bg-light p-4 rounded shadow-sm">
+        <form method="post" action="{% url 'generate_mcq' %}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="mb-3">

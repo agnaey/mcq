@@ -11,10 +11,14 @@ urlpatterns = [
 
     # MCQ Related
     path("generate/", views.generate_mcq, name="generate_mcq"),
+    path('generate-mcq/', views.generate_mcq, name='generate_mcq'),
+    path('generate_ai_mcqs/', views.generate_ai_mcqs, name='generate_ai_mcqs'),
+
     path("result/", views.result, name="result"),
     path("history/", views.history, name="history"),
     path("history/delete/<int:entry_id>/", views.delete_history, name="delete_history"),
     path("download-pdf/", views.download_pdf, name="download_pdf"),
+
 
     # Test / Quiz
     path("test/", views.test, name="test"),
