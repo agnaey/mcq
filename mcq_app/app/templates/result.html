@@ -175,13 +175,13 @@ main {
     </style>
     <div class="container">
 
-        <h2>Generated Multiple Choice Questions (MCQs)</h2>
+        <!-- <h2>Generated Multiple Choice Questions (MCQs)</h2>
         <br>
         <button onclick="toggleIcon()" class="toggle-icon-btn">
             <i id="eyeIcon" class="fas fa-eye-slash"></i>
             <span class="tooltip">Show Answer</span>
         </button>
-        <button class="copy-btn" onclick="copyQuestions()">Copy All</button>
+        <button class="copy-btn mb-1" onclick="copyQuestions()">Copy All</button>
         <div class="dropdown">
             <button class="download-btn" onclick="toggleDropdown()">Download <i class="fas fa-download"></i></button>
             <div id="dropdownMenu" class="dropdown-menu">
@@ -191,25 +191,134 @@ main {
                         class="fas fa-file-word"></i>Word</a>
             </div>
 
-        </div>
+        </div> -->
 <div class="container">
     <h2>Generated Multiple Choice Questions (MCQs)</h2>
     <br>
 
+    {% if input_text %}
+    <div class="original-text" style="border:1px solid #aaa; padding:10px; border-radius:5px; background:#f9f9f9; margin-bottom:15px;">
+        <strong>Your Input Text:</strong>
+        <p>{{ input_text }}</p>
+    </div>
+    {% endif %}
+
     {% if mcq_list %}
+       
+        <div style="margin-bottom:15px;">
+    <button onclick="copyAll()" 
+        style="background:#28a745; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; margin-right:10px;">
+        Copy All MCQs
+    </button>
+
+    <button onclick="downloadAll()" 
+        style="background:#17a2b8; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">
+        Download All MCQs
+    </button>
+
+</div>
+
+<script>
+function copyAll() {
+    let content = '';
+    const mcqs = document.querySelectorAll('.mcq');
+    mcqs.forEach((mcq, idx) => {
+        const question = mcq.querySelector('p').textContent.trim();
+        const options = Array.from(mcq.querySelectorAll('ul li')).map(li => li.textContent.trim());
+        const answer = mcq.querySelector('.answer-text').textContent.trim();
+        content += question + '\n';
+        options.forEach(opt => content += opt + '\n');
+        content += answer + '\n\n';
+    });
+
+    navigator.clipboard.writeText(content).then(() => alert("All MCQs copied!"));
+}
+</script>
+
+
         {% for mcq in mcq_list %}
             <div class="mcq" style="border:1px solid #ddd; padding:10px; margin-bottom:15px; border-radius:5px;">
                 <p><strong>Question {{ forloop.counter }}:</strong> {{ mcq.question }}</p>
+
                 <ul>
                     {% for option in mcq.options %}
-      <li>{{ option }}</li>
-    {% endfor %}
+                        <li>{{ option }}</li>
+                    {% endfor %}
+                </ul>
+
+                <button class="toggle-btn" id="btn-{{ forloop.counter }}" onclick="toggleAnswer({{ forloop.counter }})" 
+                    style="background-color: #096bec; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-eye"></i> Show Answer
+                </button>
+
+                <button onclick="copySingle({{ forloop.counter }})" 
+                    style="background-color: #ffc107; color: white; padding: 5px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left:10px;">
+                    Copy This Answer
+                </button>
+
+                <p id="answer-{{ forloop.counter }}" class="answer-text" style="font-weight: 600; margin-left: 10px; display: none;">
+                    Answer: {{ mcq.correct_answer }}
+                </p>
             </div>
         {% endfor %}
     {% else %}
         <p>No MCQs generated. Please try again with different input.</p>
     {% endif %}
+
 </div>
+
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+function toggleAnswer(index) {
+    const answer = document.getElementById(`answer-${index}`);
+    const btn = document.getElementById(`btn-${index}`);
+    if (answer.style.display === "none") {
+        answer.style.display = "block";
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Answer';
+    } else {
+        answer.style.display = "none";
+        btn.innerHTML = '<i class="fas fa-eye"></i> Show Answer';
+    }
+}
+
+function copySingle(index) {
+    const answer = document.getElementById(`answer-${index}`).textContent;
+    navigator.clipboard.writeText(answer).then(() => alert("Answer copied!"));
+}
+
+function copyText() {
+    const text = document.querySelector('.original-text p').textContent;
+    navigator.clipboard.writeText(text).then(() => alert("Input text copied!"));
+}
+
+function downloadAll() {
+    let content = '';
+    const mcqs = document.querySelectorAll('.mcq');
+    mcqs.forEach((mcq, idx) => {
+        const question = mcq.querySelector('p').textContent.trim();
+        const options = Array.from(mcq.querySelectorAll('ul li')).map(li => li.textContent.trim());
+        const answer = mcq.querySelector('.answer-text').textContent.trim();
+        content += question + '\n';
+        options.forEach(opt => content += opt + '\n');
+        content += answer + '\n\n';
+    });
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'MCQs.txt';
+    link.click();
+}
+</script>
+
+
+
+<!-- Include jsPDF for PDF download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+
 
 <style>
 .correct-answer {
@@ -273,6 +382,7 @@ ul {
             </div>
         </div>
     </div>
+    
 </main>
 
 

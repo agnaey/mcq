@@ -52,3 +52,18 @@ class MCQ(models.Model):
 
     def __str__(self):
         return f"MCQ Batch created at {self.created_at}"
+
+
+class MCQHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    input_text = models.TextField()
+    mcq_data = models.TextField() 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_mcqs(self):
+        try:
+            return json.loads(self.mcq_data)
+        except:
+            return []
+        
+

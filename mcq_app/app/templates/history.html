@@ -2,329 +2,52 @@
 {% load static %}
 {% block content %}
 
-<main>
+<main class="container py-5">
+<h2>MCQ History</h2>
+
 {% if history_data %}
-    {% for entry in history_data %} <!-- entry is one list of mcqs --> <!-- entry is one object -->
-    <div class="container-next">
-        <br>
-        <div class="mcq">
-            {% for mcq in entry.mcqs %} <!-- mcq is one dictionary -->
-            <p><strong>Question:</strong> {{ mcq.question }}</p>
-            <ul>
-                {% for option in mcq.options %}
+    {% for record in history_data %}
+<div class="history-card" style="border:1px solid #ccc; padding:15px; margin-bottom:20px; border-radius:5px; background:#f5f5f5; position:relative;">
 
-                <li class="{% if option == mcq.correct_answer %}correct-answer{% else %}regular-answer{% endif %}">
-                    {{ option }}</li>
-                {% endfor %}
-            </ul>
+    <!-- DELETE BUTTON -->
+    <a href="{% url 'delete_history' record.id %}" 
+       onclick="return confirm('Delete this entry?')"
+       style="position:absolute; top:10px; right:10px; color:red; font-size:20px;">
+        <i class="fa fa-trash"></i>
+    </a>
+
+    <p><strong>Input Text:</strong> {{ record.input_text }}</p>
+
+
+        {% if record.mcqs %}
+            {% for mcq in record.mcqs %}
+            <div style="margin-bottom:10px;">
+                <p><strong>Q{{ forloop.counter }}:</strong> {{ mcq.question }}</p>
+                {% if mcq.options %}
+                    <ul style="margin-left:20px;">
+                        {% for option in mcq.options %}
+                        <li>{{ option }}</li>
+                        {% endfor %}
+                    </ul>
+                    
+                {% endif %}
+                <p style="font-weight:600;">Answer: {{ mcq.correct_answer }}</p>
+            </div>
+            
             {% endfor %}
-        </div>
-        <div class="container-mini">
-            <h3 style="font-size:15px; color: #000;">created on {{ entry.created_at|date:"Y-m-d H:i" }}</h3>
-            <br>
-            {% if request.user.is_authenticated %}
-            <form method="POST" class="unique" action="{% url 'delete_history' entry.id %}"><!-- each entry in history its associated id,so here when the form submit the url with current entry id gets triggered and run the delete history view function to delete the particular entry -->
-                 {% csrf_token %}
-                <button type="submit" class="delete-btn">Delete</button>
-            </form>
-            {% else %}
-            <form method="POST" action="{% url 'delete_history' 1 %}">
-                {% csrf_token %}
-                <button type="submit" class="delete-btn">Delete</button>
-            </form>
+        {% else %}
+            <p>No MCQs generated for this input.</p>
+        {% endif %}
 
-            {% endif %}
-        </div>
+
     </div>
-    <!-- Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div class="tab">
-                <button class="tablinks active" onclick="openTab(event, 'Login')">Login</button>
-                <button class="tablinks" onclick="openTab(event, 'Register')">Register</button>
-            </div>
-
-            <!-- Login Form -->
-            <div id="Login" class="tabcontent" style="display: block;">
-                <form id="Loginform" action="{% url 'login' %}" method="POST">
-                    {% csrf_token %}
-
-                    <label for="login-email">Email:</label>
-                    <input type="email" id="login-email" name="email" required>
-
-                    <label for="login-password">Password:</label>
-                    <input type="password" id="login-password" name="password" required>
-
-                    <button type="submit" class="submit-btn">Login</button>
-                </form>
-            </div>
-
-            <!-- Register Form -->
-            <div id="Register" class="tabcontent">
-                <form id="Registerform" action="{% url 'register' %}" method="POST">
-                    {% csrf_token %}
-
-                    <label for="register-email">Email:</label>
-                    <input type="email" id="register-email" name="email" required>
-
-                    <label for="register-password">Password:</label>
-                    <input type="password" id="register-password" name="password" required>
-
-                    <label for="register-confirm-password">Confirm Password:</label>
-                    <input type="password" id="register-confirm-password" name="confirm_password" required>
-
-                    <button type="submit" class="submit-btn1">Register</button>
-                </form>
-            </div>
-        </div>
-    </div>
- </div>
- {% endfor %}
+    {% endfor %}
 {% else %}
-<h2>No History found!</h2>
+    <p>No history yet.</p>
 {% endif %}
+
+
+
 </main>
 
-<script>
-
-    const modal = document.getElementById("loginModal");
-    // const loginBtn = document.getElementById("loginBtn");
-    const closeBtn = document.querySelector(".close-btn");
-
-    // loginBtn.onclick = () => {
-    //     modal.style.display = "flex";
-    // };
-
-    closeBtn.onclick = () => {
-        modal.style.display = "none";
-    };
-
-    window.onclick = (event) => {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    };
-
-    // Tab functionality
-    function openTab(evt, tabName) {
-        const tabcontent = document.getElementsByClassName("tabcontent");
-        const tablinks = document.getElementsByClassName("tablinks");
-
-        for (let i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-
-        for (let i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-
-        document.getElementById(tabName).style.display = "block";
-        evt.currentTarget.className += " active";
-    }
-
-
-
-    function copyQuestions() {
-        let textToCopy = "";
-
-        document.querySelectorAll(".mcq").forEach((mcqElement) => {
-            // Capture the question text
-            const questionText = mcqElement.querySelector("p").textContent.trim();
-            textToCopy += questionText + "\n";
-
-            // Capture each option
-            const options = Array.from(mcqElement.querySelectorAll("li")).map(li => "- " + li.textContent).join("\n");
-            //  Array.from(_) converts this NodeList returned by querySelectorAll into an actual array. This allows us to use array methods like .map().
-            textToCopy += options + "\n\n";
-        });
-
-        // Copy to clipboard
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            alert("All questions copied to clipboard!");
-        }).catch(err => {
-            alert("Failed to copy text: ", err);
-        });
-    }
-
-
-
-    async function downloadPDF() {
-        const response = await fetch("{% url 'is_logged_in' %}",
-            {
-                credentials: 'same-origin'
-            }
-        );
-        console.log(response)
-        const data = await response.json();
-        console.log(data)
-        if (!data.logged_in) {
-            console.log("not logged")
-            // If the user is not logged in, show the login modal
-            modal.style.display = "flex"; // Show the modal
-        }
-        else {
-            console.log("is already logged")
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            let yOffset = 10;
-
-
-            document.querySelectorAll(".mcq").forEach((mcqElement, index) => {
-                const questionText = mcqElement.querySelector("p").textContent.trim();
-                doc.text(questionText, 10, yOffset);
-                yOffset += 10;
-
-                const options = Array.from(mcqElement.querySelectorAll("li")).map(li => li.textContent);
-                options.forEach(option => {
-                    doc.text("- " + option, 20, yOffset);
-                    yOffset += 10;
-                });
-
-                yOffset += 10; // Add space between questions
-
-                // Check for page overflow
-                if (yOffset > 270) {
-                    doc.addPage();
-                    yOffset = 10;
-                }
-            });
-            doc.save("Generated_MCQs.pdf");
-        }
-    }
-
-
-    // AJAX for Login Form
-    document.querySelector("#Loginform").onsubmit = async function (event) {
-        event.preventDefault();
-        const formData = new FormData(this);
-        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
-        console.log("csrf token", csrfToken)
-        // const csrfToken = "{% csrf_token %}";
-        const response = await fetch("{% url 'login' %}", {
-            method: "POST",
-            body: formData,
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CSRFToken": csrfToken
-            },
-        });
-        const data = await response.json();
-        if (data.success) {
-            alert(data.message); // Display success message
-            modal.style.display = "none"; // Close the modal
-            location.reload(); // Reload page to reflect logged-in state
-        } else {
-            alert(data.message); // Display error message
-        }
-    };
-
-    // AJAX for Registration Form
-    document.querySelector("#Registerform").onsubmit = async function (event) {
-        event.preventDefault();
-        const formData = new FormData(this);
-        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
-        const response = await fetch("{% url 'register' %}", {
-            method: "POST",
-            body: formData,
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CSRFToken": csrfToken
-            },
-        });
-        const data = await response.json();
-        if (data.success) {
-            alert(data.message); // Display success message
-            modal.style.display = "none"; // Close the modal
-            location.reload(); // Reload page to reflect logged-in state
-        } else {
-            alert(data.message); // Display error message
-        }
-    };
-
-    function toggleDropdown() {
-        const dropdownMenu = document.getElementById("dropdownMenu");
-        dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
-    }
-
-    function downloadFile(type) {
-        // Implement download logic based on `type`
-        console.log(`Download ${type.toUpperCase()} file`);
-    }
-
-    function copyText() {
-        // Implement copy text logic
-        console.log("Copy text to clipboard");
-    }
-
-    // Close the dropdown if the user clicks outside of the button
-    window.onclick = function (event) {
-        if (!event.target.closest('.download-btn')) {
-            const dropdownMenu = document.getElementById("dropdownMenu");
-            if (dropdownMenu.style.display === "block") {
-                dropdownMenu.style.display = "none";
-            }
-        }
-    }
-
-
-    function toggleIcon() {
-        const eyeIcon = document.getElementById("eyeIcon");
-        // for toggling
-        if (eyeIcon.classList.contains("fa-eye-slash")) {
-            eyeIcon.classList.remove("fa-eye-slash");
-            eyeIcon.classList.add("fa-eye");
-        } else {
-            eyeIcon.classList.remove("fa-eye");
-            eyeIcon.classList.add("fa-eye-slash");
-        }
-    }
-    
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const darkModeToggle = document.getElementById('dark-mode-toggle');
-
-        if (darkModeToggle) {
-            darkModeToggle.addEventListener('click', function (event) {
-                event.preventDefault(); // Prevent any default behavior
-
-                // Toggle the .dark-mode class on <html> for global effect
-                document.documentElement.classList.toggle('darkmode');
-
-                // Save the user's preference in localStorage
-                localStorage.setItem('theme',
-                    document.documentElement.classList.contains('darkmode') ? 'dark' : 'light'
-                );
-            });
-        } else {
-            console.error("Element with ID 'dark-mode-toggle' not found.");
-        }
-
-        // Apply saved theme preference
-        if (localStorage.getItem('theme') === 'dark') {
-            document.documentElement.classList.add('darkmode');
-        }
-    });
-
-    function setActive(element) {
-        // Remove 'active' class from all <li> elements
-        document.querySelectorAll("#sidebar li").forEach((li) => {
-            li.classList.remove("active");
-        });
-    
-        // Add 'active' class to the clicked <li> element
-        element.parentElement.classList.add("active");
-    }
-    
-    // Set 'Home' as default active when page loads
-    {% comment %} document.addEventListener("DOMContentLoaded", function () {
-        document.querySelector("#sidebar li:first-child").classList.add("active");
-    }); {% endcomment %}
-    
-
-</script>
-<script src="{% static 'js/index.js' %}"></script>
-</body>
-
-</html>
 {% endblock %}

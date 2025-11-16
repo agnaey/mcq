@@ -94,3 +94,23 @@ class ProfileUpdateForm(forms.ModelForm):
         
         # Customize the choices for the dropdown (user_dropdown)
         self.fields['user_dropdown'].label_from_instance = lambda user: f"{user.username} ({user.email})"
+
+# ----------------------------------------------------------------------------------------
+
+
+from django import forms
+from .models import User, Profile
+
+class UserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email']   # ONLY email exists
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['image']
+
+
+
